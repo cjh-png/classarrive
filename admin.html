@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【管理端】慈雲山天主教小學 - 點亮班級</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <header class="bg-red-600 text-white p-6 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold">放學管理系統</h1>
+                <p class="text-sm opacity-80">點擊班級按鈕以切換「已到達」狀態</p>
+            </div>
+            <button onclick="resetAll()" class="bg-white text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-50 transition">
+                一鍵重置
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 mt-6">
+        <div class="grid grid-cols-5 gap-3" id="admin-grid">
+            </div>
+
+        <div class="mt-10 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 text-sm">
+            <p><strong>操作說明：</strong></p>
+            <ul class="list-disc ml-5">
+                <li>綠色按鈕：家長端顯示為「已到達」。</li>
+                <li>灰色按鈕：家長端顯示為「尚未到達」。</li>
+                <li>此頁面僅供老師操作，請勿將網址流傳給學生或家長。</li>
+            </ul>
+        </div>
+    </header>
+
+    <script>
+        // ==========================================
+        // 1. Firebase 配置 (請在此處貼上你的配置)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDasJRh2IOjeH7en-QfkH6vqCd9mKYWHwc",
+            authDomain: "class-arrive.firebaseapp.com",
+            databaseURL: "https://class-arrive-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "class-arrive",
+            storageBucket: "class-arrive.firebasestorage.app",
+            messagingSenderId: "17512742264",
+            appId: "1:917512742264:web:3bf79fa46b798e6e86548d"
+        };
+
+        // 初始化 Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // ==========================================
+        // 2. 生成界面與交互邏輯
+        // ==========================================
+        const grid = document.getElementById('admin-grid');
+        const grades = ['1','2','3','4','5','6'];
+        const letters = ['A','B','C','D','E'];
+
+        // 建立 30 個班級按鈕
+        grades.forEach(g => {
+            letters.forEach(l => {
+                const classId = g + l;
+                const btn = document.createElement('button');
+                btn.id = `btn-${classId}`;
+                btn.innerText = classId;
+                
+                // 基礎樣式
+                btn.className = "h-16 rounded-lg font-bold text-lg shadow transition-all active:scale-95 border-2";
+                
+                // 點擊事件：切換數據庫狀態
+                btn.onclick = () => {
+                    const isArrived = btn.getAttribute('data-arrived') === 'true';
+                    db.ref('dismissal/' + classId).set(!isArrived);
+                };
+
+                grid.appendChild(btn);
+            });
+        });
+
+        // 監聽數據庫變化 (即時同步按鈕顏色)
+        db.ref('dismissal').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            
+            grades.forEach(g => {
+                letters.forEach(l => {
+                    const classId = g + l;
+                    const btn = document.getElementById(`btn-${classId}`);
+                    const status = data[classId] || false;
+                    
+                    btn.setAttribute('data-arrived', status);
+                    
+                    if (status) {
+                        // 已到達的樣式 (綠色)
+                        btn.classList.add('bg-green-500', 'text-white', 'border-green-600');
+                        btn.classList.remove('bg-white', 'text-gray-400', 'border-gray-200');
+                    } else {
+                        // 未到達的樣式 (灰色)
+                        btn.classList.add('bg-white', 'text-gray-400', 'border-gray-200');
+                        btn.classList.remove('bg-green-500', 'text-white', 'border-green-600');
+                    }
+                });
+            });
+        });
+
+        // 重置所有班級
+        function resetAll() {
+            if (confirm('確定要清除所有班級的到達狀態嗎？此動作不可撤銷。')) {
+                db.ref('dismissal').set(null);
+            }
+        }
+    </script>
+</body>
+</html>

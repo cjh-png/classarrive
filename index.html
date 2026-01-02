@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>慈雲山天主教小學 - 放學看板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body class="bg-slate-100 font-sans">
+    <div class="max-w-4xl mx-auto p-4">
+        <header class="text-center py-8">
+            <h1 class="text-3xl font-bold text-blue-800">慈雲山天主教小學</h1>
+            <p class="text-gray-600 mt-2 text-lg">班級放學到達狀態 (即時更新)</p>
+        </header>
+
+        <div class="grid grid-cols-5 gap-3 md:gap-6" id="grid"></div>
+    </div>
+
+    <script>
+        // *** 這裡貼上你剛剛在 Firebase 複製的配置 ***
+        const firebaseConfig = {
+            apiKey: "AIzaSyDasJRh2IOjeH7en-QfkH6vqCd9mKYWHwc",
+            databaseURL: "https://class-arrive-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "class-arrive",
+            storageBucket: "class-arrive.firebasestorage.app",
+            messagingSenderId: "917512742264",
+            appId: "1:917512742264:web:3bf79fa46b798e6e86548d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 生成 30 個班級格子
+        const grid = document.getElementById('grid');
+        const grades = ['1','2','3','4','5','6'];
+        const letters = ['A','B','C','D','E'];
+
+        grades.forEach(g => {
+            letters.forEach(l => {
+                const id = g + l;
+                const div = document.createElement('div');
+                div.id = `box-${id}`;
+                div.className = "h-20 flex items-center justify-center rounded-xl bg-white border-2 border-gray-200 text-xl font-bold text-gray-400 transition-all duration-500 shadow-sm";
+                div.innerText = id;
+                grid.appendChild(div);
+            });
+        });
+
+        // 監聽數據庫，有人更新老師版，這裡會自動變色
+        db.ref('dismissal').on('value', (snapshot) => {
+            const status = snapshot.val() || {};
+            grades.forEach(g => {
+                letters.forEach(l => {
+                    const id = g + l;
+                    const el = document.getElementById(`box-${id}`);
+                    if (status[id] === true) {
+                        el.className = "h-20 flex items-center justify-center rounded-xl bg-green-500 border-green-600 text-white text-2xl font-bold shadow-lg scale-105";
+                    } else {
+                        el.className = "h-20 flex items-center justify-center rounded-xl bg-white border-2 border-gray-200 text-xl font-bold text-gray-400";
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
